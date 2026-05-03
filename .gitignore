@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Configurazione e Log (IMPORTANTE: non caricare le tue password)
+config.ini
+*.log
+logs/
+
+# PyCharm
+.idea/
