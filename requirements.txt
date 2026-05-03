@@ -22,6 +22,8 @@ httptools==0.7.1
     # via uvicorn
 idna==3.13
     # via anyio
+myapputilities @ git+https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/Apetto71/MyAppUtilities.git@v1.0.1
+    # via -r requirements.in
 pika==1.3.2
     # via -r requirements.in
 pydantic==2.13.3

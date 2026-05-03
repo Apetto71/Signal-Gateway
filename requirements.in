@@ -3,4 +3,4 @@ uvicorn[standard]
 redis
 pika
 python-dotenv
-
+git+https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/Apetto71/MyAppUtilities.git@v1.0.1
