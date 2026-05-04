@@ -19,9 +19,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 
 # 6. Installa le dipendenze Python
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
+# Ora pip troverà il comando git per installare MyAppUtilities
+RUN pip install --no-cache-dir --upgrade pip
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 # 7. Copia tutto il contenuto della cartella locale nel container
 # Includerà gateway.py, le tue utility e il config.ini
 COPY . .
