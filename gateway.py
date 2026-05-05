@@ -111,37 +111,39 @@ class SignalGateway:
                 self.active_connections.discard(connection)
 
     def run_rabbit_forever(self, loop):
-        """Ciclo infinito con riconnessione automatica"""
         self.loop = loop
-
         retry_delay = 5
         while True:
             try:
-                self.logger.info("🐰 Tentativo di connessione a RabbitMQ...")
-
-                # CORREZIONE: Passiamo i parametri esattamente come richiesti dalla tua classe
+                self.logger.info("🐰 Connessione a RabbitMQ per DOPPIO ascolto...")
                 rabbit = RabbitMQSimpleDLQ(
                     host=self.config.get_string('RABBITMQ', 'host'),
-                    porta=self.config.get_int('RABBITMQ', 'port'),  # Controlla se è 'porta' o 'port'
+                    porta=self.config.get_int('RABBITMQ', 'port'),
                     user=self.config.get_string('RABBITMQ', 'user'),
-                    passw=self.config.get_string('RABBITMQ', 'password')  # Controlla se è 'passw' o 'password'
+                    passw=self.config.get_string('RABBITMQ', 'password')
                 )
 
                 if rabbit.connect():
-                    self.logger.info("✅ Connesso a RabbitMQ. In attesa di messaggi...")
-                    retry_delay = 5
-                    rabbit.consume_messages(
-                        queue_name=self.config.get_string('RABBITMQ', 'queue_in'),
-                        callback=self.rabbit_callback
+                    # 1. Ascolta la coda TOP10
+                    queue_top = self.config.get_string('RABBITMQ', 'queue_top_list')
+                    rabbit.channel.basic_consume(
+                        queue=queue_top,
+                        on_message_callback=self.rabbit_callback
                     )
+
+                    # 2. Ascolta la coda PREZZI FILTRATI
+                    queue_prices = self.config.get_string('RABBITMQ', 'queue_prices')
+                    rabbit.channel.basic_consume(
+                        queue=queue_prices,
+                        on_message_callback=self.rabbit_callback
+                    )
+
+                    self.logger.info(f"✅ In ascolto su: {queue_top} E {queue_prices}")
+                    rabbit.channel.start_consuming()
+
             except Exception as e:
-                # Questo catturerà l'errore degli argomenti mancanti se i nomi non coincidono
                 self.logger.error(f"⚠️ Errore RabbitMQ: {e}")
-
-            self.logger.info(f"🔄 Riconnessione tra {retry_delay} secondi...")
-            time.sleep(retry_delay)
-            retry_delay = min(retry_delay * 2, 60)
-
+                time.sleep(retry_delay)
 
 # Inizializzazione Gateway
 gateway = SignalGateway(path_config)
