@@ -40,4 +40,4 @@ RUN mkdir -p /app/logs
 EXPOSE 40000
 
 # 10. Comando per avviare l'applicazione
-CMD ["python", "gateway.py"]
+CMD ["python", "gateway_service.py"]
