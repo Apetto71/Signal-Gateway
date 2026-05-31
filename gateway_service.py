@@ -68,22 +68,27 @@ app = FastAPI(lifespan=lifespan)
 # 4. Endpoint WebSocket Real-Time con estrazione manuale del token
 @app.websocket("/ws/live")
 async def websocket_endpoint(websocket: WebSocket):
-    query_params = websocket.query_params
-    token = query_params.get("auth_token")
+    # 🎯 RECUPERIAMO IL TOKEN DALL'HEADER HTTP "Authorization" INVECE CHE DALLA URL
+    auth_header = websocket.headers.get("authorization", "")
+    token = None
+
+    # Verifichiamo che l'header segua lo schema standard "Bearer <token>"
+    if auth_header.startswith("Bearer "):
+        try:
+            token = auth_header.split(" ")[1].strip()
+        except IndexError:
+            token = None
 
     # 1. Controllo sicurezza sul Token PRIMA di accettare
     if auth_token and token != auth_token:
         logger.warning(f"🔒 Connessione WebSocket respinta: Token errato o assente.")
-        # Se il token è ERRATO, allora sì che dobbiamo fare accept+close manuale per sganciarlo
+        # Accettiamo e chiudiamo subito con codice 1008 per segnalare la violazione di policy
         await websocket.accept()
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
-    # 2. SE IL TOKEN È CORRETTO:
-    # !!! NOTA CRUCIALE !!! NON SCRIVERE "await websocket.accept()" QUI!
-    # Lasciamo che sia interamente gestito da connection_manager.connect() alla riga sotto.
+    # 2. SE IL TOKEN È CORRETTO, LA CONNESIONE PROSEGUE:
     await connection_manager.connect(websocket)
-
     # 3. COMPILAZIONE E INVIO SNAPSHOT INIZIALE DA REDIS
     try:
         logger.info("📊 Richiesta di snapshot globale al modulo Redis...")
